@@ -265,6 +265,103 @@ end
   </tr>
 </table>
 
+<% if @user_sessions %>
+<h2>User sessions</h2>
+<% created = @user_sessions[:created]; active = @user_sessions[:active] %>
+<table class="overview">
+  <tr>
+    <th>AUTHENTICATION TYPE</th>
+    <th>CREATED DURING PERIOD</th>
+    <th>DISTINCT USERS</th>
+    <th>ACTIVE NOW</th>
+    <th>DISTINCT USERS</th>
+  </tr>
+  <tr>
+    <th>Total</th>
+    <td><%= created[:total] %></td>
+    <td><%= created[:users] %></td>
+    <td><%= active[:total] %></td>
+    <td><%= active[:users] %></td>
+  </tr>
+  <% (created[:by_auth_type].keys | active[:by_auth_type].keys).each do |type| %>
+    <% added = created[:by_auth_type].fetch(type, { total: 0, users: 0 }); current = active[:by_auth_type].fetch(type, { total: 0, users: 0 }) %>
+    <tr>
+      <td><%= ERB::Util.html_escape({ 'basic' => 'HTTP Basic', 'token' => 'API token', 'oauth2' => 'OAuth2' }.fetch(type, type)) %></td>
+      <td><%= added[:total] %></td>
+      <td><%= added[:users] %></td>
+      <td><%= current[:total] %></td>
+      <td><%= current[:users] %></td>
+    </tr>
+  <% end %>
+</table>
+<p>Active subsets (already included above; may overlap):</p>
+<ul>
+  <li>Permanent credentials: <%= @user_sessions[:permanent][:total] %> (users: <%= @user_sessions[:permanent][:users] %>)</li>
+  <li>Administrator-created sessions: <%= @user_sessions[:administrator_created][:total] %> (users: <%= @user_sessions[:administrator_created][:users] %>)</li>
+</ul>
+<p>HTTP Basic creates one immediately closed session per authenticated request.
+Active sessions have usable credentials, including OAuth2 refresh tokens.
+Distinct users may appear under more than one authentication type.</p>
+<% end %>
+
+<% if @password_changes %>
+<h2>Password changes during period</h2>
+<table class="overview">
+  <tr><th>SOURCE</th><th>CHANGES</th></tr>
+  <tr><th>Total</th><td><%= @password_changes[:total] %></td></tr>
+  <% @password_changes[:by_source].each do |source, count| %>
+    <tr>
+      <td><%= ERB::Util.html_escape({ 'recovery' => 'Successful recoveries', 'authenticated' => 'Manual password changes', 'forced_reset' => 'Required password changes', 'administrator' => 'Administrator password changes', 'other' => 'Other password changes' }.fetch(source, source)) %></td>
+      <td><%= count %></td>
+    </tr>
+  <% end %>
+</table>
+<% end %>
+
+<% if @password_recoveries %>
+<h2>Password recovery activity</h2>
+<table class="overview">
+  <tr><th>DURING PERIOD</th><th>COUNT</th></tr>
+  <tr><td>Processed requests</td><td><%= @password_recoveries[:requests] %></td></tr>
+  <tr><td>Recoverable account attempts started</td><td><%= @password_recoveries[:started] %></td></tr>
+  <tr><td>Successful recoveries</td><td><%= @password_recoveries[:completed] %></td></tr>
+  <tr><td>Unfulfilled attempts</td><td><%= @password_recoveries[:unfulfilled] %></td></tr>
+  <tr><td>Expired attempts</td><td><%= @password_recoveries[:expired] %></td></tr>
+  <tr><td>Invalidated attempts</td><td><%= @password_recoveries[:invalidated] %></td></tr>
+  <tr><td>Accounts without MFA</td><td><%= @password_recoveries[:no_mfa] %></td></tr>
+  <tr><td>Other unavailable accounts</td><td><%= @password_recoveries[:unavailable] %></td></tr>
+</table>
+<table class="overview">
+  <tr><th>PENDING NOW</th><th>COUNT</th></tr>
+  <tr><td>Total</td><td><%= @password_recoveries[:pending][:total] %></td></tr>
+  <tr><td>Awaiting the email link</td><td><%= @password_recoveries[:pending][:email] %></td></tr>
+  <tr><td>Recovery in progress</td><td><%= @password_recoveries[:pending][:session] %></td></tr>
+</table>
+<p>One request can cover several accounts. Completions and unfulfilled attempts
+can come from earlier requests. Successful recoveries are also included in
+password changes above; pending attempts are excluded from unfulfilled attempts.
+Processed requests do not confirm email delivery.</p>
+<% end %>
+
+<% if @failed_logins %>
+<h2>Recorded failed login attempts during period</h2>
+<p>Total: <%= @failed_logins[:total] %> (affected users: <%= @failed_logins[:users] %>)</p>
+<table class="overview">
+  <tr><th>MECHANISM</th><th>REASON</th><th>ATTEMPTS</th><th>AFFECTED USERS</th></tr>
+  <% @failed_logins[:by_reason].each do |row| %>
+    <tr>
+      <td><%= ERB::Util.html_escape(row[:auth_type]) %></td>
+      <td><%= ERB::Util.html_escape(row[:reason]) %></td>
+      <td><%= row[:total] %></td>
+      <td><%= row[:users] %></td>
+    </tr>
+  <% end %>
+</table>
+<p>These records cover known accounts and include incomplete authentication flows
+and recorded password recovery failures. Unknown-account attempts are excluded.</p>
+<% end %>
+
+<h2>Storage</h2>
 <table class="overview">
   <tr>
     <th>STORAGE</th>
