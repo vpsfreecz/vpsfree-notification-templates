@@ -96,6 +96,14 @@ END
   ret
 end
 
+def action_user(event)
+  id = ERB::Util.html_escape(event[:user_id])
+  return "User ##{id}" unless event[:user_login]
+
+  href = ERB::Util.html_escape(url('adminm', "action=edit&id=#{event[:user_id]}"))
+  "<a href=\"#{href}\">#{ERB::Util.html_escape(event[:user_login])} (##{id})</a>"
+end
+
 def list_vpses(vpses, col)
   ret = <<END
   <table>
@@ -305,17 +313,32 @@ Distinct users may appear under more than one authentication type.</p>
 <% end %>
 
 <% if @password_changes %>
+<% source_labels = { 'recovery' => 'Successful recoveries', 'authenticated' => 'Manual password changes', 'forced_reset' => 'Required password changes', 'administrator' => 'Administrator password changes', 'other' => 'Other password changes' } %>
 <h2>Password changes during period</h2>
 <table class="overview">
   <tr><th>SOURCE</th><th>CHANGES</th></tr>
   <tr><th>Total</th><td><%= @password_changes[:total] %></td></tr>
   <% @password_changes[:by_source].each do |source, count| %>
     <tr>
-      <td><%= ERB::Util.html_escape({ 'recovery' => 'Successful recoveries', 'authenticated' => 'Manual password changes', 'forced_reset' => 'Required password changes', 'administrator' => 'Administrator password changes', 'other' => 'Other password changes' }.fetch(source, source)) %></td>
+      <td><%= ERB::Util.html_escape(source_labels.fetch(source, source)) %></td>
       <td><%= count %></td>
     </tr>
   <% end %>
 </table>
+<% if @password_changes[:events]&.any? %>
+<h3>Password change details</h3>
+<table>
+  <tr><th>TIME</th><th>USER</th><th>SOURCE</th><th>CLIENT IP</th></tr>
+  <% @password_changes[:events].each do |event| %>
+    <tr>
+      <td><%= time(event[:created_at]) %></td>
+      <td><%= action_user(event) %></td>
+      <td><%= ERB::Util.html_escape(source_labels.fetch(event[:source], event[:source])) %></td>
+      <td><%= ERB::Util.html_escape(event[:client_ip_addr].presence || '—') %></td>
+    </tr>
+  <% end %>
+</table>
+<% end %>
 <% end %>
 
 <% if @password_recoveries %>
@@ -357,6 +380,21 @@ Processed requests do not confirm email delivery.</p>
     </tr>
   <% end %>
 </table>
+<% if @failed_logins[:events]&.any? %>
+<h3>Failed login details</h3>
+<table>
+  <tr><th>TIME</th><th>USER</th><th>MECHANISM</th><th>REASON</th><th>CLIENT IP</th></tr>
+  <% @failed_logins[:events].each do |event| %>
+    <tr>
+      <td><%= time(event[:created_at]) %></td>
+      <td><%= action_user(event) %></td>
+      <td><%= ERB::Util.html_escape(event[:auth_type]) %></td>
+      <td><%= ERB::Util.html_escape(event[:reason]) %></td>
+      <td><%= ERB::Util.html_escape(event[:client_ip_addr].presence || '—') %></td>
+    </tr>
+  <% end %>
+</table>
+<% end %>
 <p>These records cover known accounts and include incomplete authentication flows
 and recorded password recovery failures. Unknown-account attempts are excluded.</p>
 <% end %>
