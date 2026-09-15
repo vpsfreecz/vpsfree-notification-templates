@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:24px 12px;background:#f3f5f7;color:#24313d;font-family:Arial,sans-serif;line-height:1.6;">
+<table role="presentation" style="width:100%;max-width:640px;margin:0 auto;background:#fff;border:1px solid #dce2e7;border-radius:8px;">
+<tr><td style="padding:24px;">
+<p>Ahoj <%= ERB::Util.html_escape(@user.login) %>,</p>
+<p><% if @addresses.one? -%>
+připomínáme plánované uvolnění níže uvedené IP adresy, která stále není přiřazená k VPS.
+<% else -%>
+připomínáme plánované uvolnění níže uvedených IP adres, které stále nejsou přiřazené k VPS.
+<% end -%></p>
+<% if @addresses.any?(&:public_ipv4?) -%>
+<p><% if @addresses.one? -%>
+Veřejných IPv4 adres je nedostatek. Uvolněním adresy, kterou už nepotřebuješ, pomůžeš zajistit adresu pro další VPS.
+<% else -%>
+Veřejných IPv4 adres je nedostatek. Uvolněním těch, které už nepotřebuješ, pomůžeš zajistit adresy pro další VPS.
+<% end -%></p>
+<% end -%>
+<ul>
+<% @addresses.each do |item| -%>
+  <li><%= ERB::Util.html_escape(item.address) %>/<%= item.prefix %> (<%= ERB::Util.html_escape(item.location_label || 'lokace není dostupná') %>)</li>
+<% end -%>
+</ul>
+<p><strong>Plánované datum uvolnění:</strong> <%= ERB::Util.html_escape(local_time(@campaign.deadline, '%-d. %-m. %Y %H:%M %Z')) %></p>
+<p><% if @addresses.one? -%>
+Pokud už tuto adresu nepotřebuješ, nemusíš odpovídat ani nic dělat.
+<% else -%>
+Pokud už tyto adresy nepotřebuješ, nemusíš odpovídat ani nic dělat.
+<% end -%></p>
+<p><% if @addresses.one? -%>
+Pokud adresu stále potřebuješ, můžeš si ji ponechat přiřazením k VPS.
+<% else -%>
+Pokud některou adresu stále potřebuješ, můžeš si ji ponechat přiřazením k VPS.
+<% end -%>
+<% if @campaign.allow_keep -%>
+Adresu si můžeš ponechat i bez přiřazení: ve vpsAdminu ji vyber a napiš důvod, proč ji potřebuješ.
+<% end -%>
+</p>
+<p><% if @addresses.one? -%>
+Aktuální stav adresy a možnosti jejího ponechání najdeš ve vpsAdminu:
+<% else -%>
+Aktuální stav adres a možnosti jejich ponechání najdeš ve vpsAdminu:
+<% end -%></p>
+<p style="margin:24px 0;"><a href="<%= ERB::Util.html_escape(@webui_url) %>/?page=ip_release&amp;action=request&amp;id=<%= @request.id %>" style="display:inline-block;padding:12px 20px;background:#176b99;border-radius:5px;color:#fff;text-decoration:none;font-weight:bold;">Otevřít ve vpsAdminu</a></p>
+<p>Děkujeme za tvůj čas.</p>
+<p>S pozdravem<br>tým vpsFree.cz</p>
+<p style="font-size:12px;color:#596773;">(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)</p>
+</td></tr>
+</table>
+</body>
+</html>

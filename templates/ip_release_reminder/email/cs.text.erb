@@ -1,0 +1,56 @@
+Ahoj <%= @user.login %>,
+
+<% if @addresses.one? -%>
+připomínáme plánované uvolnění níže uvedené IP adresy, která stále není
+přiřazená k VPS.
+<% else -%>
+připomínáme plánované uvolnění níže uvedených IP adres, které stále nejsou
+přiřazené k VPS.
+<% end -%>
+<% if @addresses.any?(&:public_ipv4?) -%>
+
+<% if @addresses.one? -%>
+Veřejných IPv4 adres je nedostatek. Uvolněním adresy, kterou už
+nepotřebuješ, pomůžeš zajistit adresu pro další VPS.
+<% else -%>
+Veřejných IPv4 adres je nedostatek. Uvolněním těch, které už nepotřebuješ,
+pomůžeš zajistit adresy pro další VPS.
+<% end -%>
+<% end -%>
+
+<% @addresses.each do |item| -%>
+  - <%= item.address %>/<%= item.prefix %> (<%= item.location_label || 'lokace není dostupná' %>)
+<% end -%>
+
+Plánované datum uvolnění: <%= local_time(@campaign.deadline, '%-d. %-m. %Y %H:%M %Z') %>
+
+<% if @addresses.one? -%>
+Pokud už tuto adresu nepotřebuješ, nemusíš odpovídat ani nic dělat.
+<% else -%>
+Pokud už tyto adresy nepotřebuješ, nemusíš odpovídat ani nic dělat.
+<% end -%>
+
+<% if @addresses.one? -%>
+Pokud adresu stále potřebuješ, můžeš si ji ponechat přiřazením k VPS.
+<% else -%>
+Pokud některou adresu stále potřebuješ, můžeš si ji ponechat přiřazením k VPS.
+<% end -%>
+<% if @campaign.allow_keep -%>
+Adresu si můžeš ponechat i bez přiřazení: ve vpsAdminu ji vyber a napiš důvod,
+proč ji potřebuješ.
+<% end -%>
+
+<% if @addresses.one? -%>
+Aktuální stav adresy a možnosti jejího ponechání najdeš ve vpsAdminu:
+<% else -%>
+Aktuální stav adres a možnosti jejich ponechání najdeš ve vpsAdminu:
+<% end -%>
+<%= @webui_url %>/?page=ip_release&action=request&id=<%= @request.id %>
+
+Děkujeme za tvůj čas.
+
+S pozdravem
+
+tým vpsFree.cz
+
+(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)
