@@ -1,0 +1,34 @@
+Ahoj <%= @user.login %>,
+
+na svém účtu máš IP adresy, které nejsou přiřazené k žádnému VPS. Plánujeme je
+uvolnit, aby je mohli využít další členové.
+<% if @addresses.any?(&:public_ipv4?) -%>
+
+Veřejných IPv4 adres je nedostatek. Uvolněním těch, které už nepotřebuješ,
+pomůžeš zajistit adresy pro další VPS.
+<% end -%>
+
+<% @addresses.each do |item| -%>
+  - <%= item.address %>/<%= item.prefix %> (<%= item.location_label || 'lokace není dostupná' %>)
+<% end -%>
+
+Plánované datum uvolnění: <%= local_time(@campaign.deadline, '%-d. %-m. %Y %H:%M %Z') %>
+
+Pokud už tyto adresy nepotřebuješ, nemusíš odpovídat ani nic dělat.
+
+Pokud některou adresu stále potřebuješ, můžeš si ji ponechat přiřazením k VPS.
+<% if @campaign.allow_keep -%>
+Adresu si můžeš ponechat i bez přiřazení: ve vpsAdminu ji vyber a napiš důvod,
+proč ji potřebuješ.
+<% end -%>
+
+Aktuální stav adres a možnosti jejich ponechání najdeš ve vpsAdminu:
+<%= @webui_url %>/?page=ip_release&action=request&id=<%= @request.id %>
+
+Děkujeme za tvůj čas.
+
+S pozdravem
+
+tým vpsFree.cz
+
+(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)
