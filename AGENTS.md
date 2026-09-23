@@ -27,6 +27,13 @@ Keep `meta.rb` consistent with the existing `template` and `lang` blocks. Put
 localized subjects and bodies in `email/`. Use `<%= ... %>` interpolation and
 readable text wrapping. Update the relevant language variants together.
 
+Use `[vpsFree.cz] ` before a user-facing email subject only when it has no
+other identifying prefix. Keep an existing prefix such as
+`[vpsAdmin Request #…]` instead of adding `[vpsFree.cz] `. For replies,
+place `Re: ` before whichever prefix the subject uses. Apply the rule to every
+language variant, including subjects with ERB expressions. Emails sent only to
+admins do not need the prefix.
+
 ## Language and Communication Style
 
 User-facing emails are factual, calm, and action-oriented. English starts with
