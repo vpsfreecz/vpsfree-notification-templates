@@ -1,0 +1,85 @@
+<% day_word = ->(days) { days == 1 ? 'den' : ((2..4).cover?(days) ? 'dny' : 'dní') } -%>
+<!DOCTYPE html>
+<html lang="cs">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:24px 12px;background:#f3f5f7;color:#24313d;font-family:Arial,sans-serif;line-height:1.6;">
+<table role="presentation" style="width:100%;max-width:640px;margin:0 auto;background:#fff;border:1px solid #dce2e7;border-radius:8px;">
+<tr><td style="padding:24px;">
+<p>Ahoj <%= ERB::Util.html_escape((@vps.user.login).to_s) %>,</p>
+<% if @incident.mailbox_id -%>
+<p>přeposíláme Ti nalezený incident pro VPS <%= ERB::Util.html_escape((@vps.id).to_s) %> <%= ERB::Util.html_escape((@vps.hostname).to_s) %>, který jsme obdrželi na abuse@vpsfree.cz.</p>
+<% else -%>
+<p>zaznamenali jsme problém s VPS <%= ERB::Util.html_escape((@vps.id).to_s) %> <%= ERB::Util.html_escape((@vps.hostname).to_s) %>.</p>
+<% end -%>
+<% if @incident.ip_address -%>
+<p>IP adresa: <%= ERB::Util.html_escape((@incident.ip_address.to_s).to_s) %></p>
+<% end -%>
+<p>Předmět: <%= ERB::Util.html_escape((@incident.subject).to_s) %></p>
+<% if @incident.cpu_limit -%>
+<p>CPU limit: <%= ERB::Util.html_escape((@incident.cpu_limit).to_s) %> %</p>
+<% end -%>
+<p>Zpráva:</p>
+<pre style="white-space:pre-wrap;word-break:break-word;font:inherit;"><%= ERB::Util.html_escape((@incident.text).to_s) %></pre>
+<% policies = Array(@incident_policies).select do |policy|
+     policy.is_a?(Hash) && !policy[:label].to_s.empty? &&
+       %i[warning_period_days stop_period_days count_7d count_30d].all? { |key| policy[key].is_a?(Integer) && policy[key] >= 0 } &&
+       %i[warning_limit stop_limit].all? { |key| policy[key].is_a?(Integer) && policy[key].positive? }
+   end -%>
+<% if policies.any? -%>
+<p>Přehled incidentů:</p>
+<% policies.each_with_index do |policy, index| -%>
+<p><strong><%= ERB::Util.html_escape(policy[:label].to_s) %></strong></p>
+<table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:14px;line-height:1.4;">
+<colgroup><col style="width:25%;"><col style="width:25%;"><col style="width:18%;"><col style="width:32%;"></colgroup>
+<thead><tr>
+<th scope="col" style="padding:8px 4px;text-align:left;border-bottom:2px solid #dce2e7;overflow-wrap:anywhere;">Období</th>
+<th scope="col" style="padding:8px 4px;text-align:left;border-bottom:2px solid #dce2e7;overflow-wrap:anywhere;">Počet incidentů</th>
+<th scope="col" style="padding:8px 4px;text-align:left;border-bottom:2px solid #dce2e7;overflow-wrap:anywhere;">Limit</th>
+<th scope="col" style="padding:8px 4px;text-align:left;border-bottom:2px solid #dce2e7;overflow-wrap:anywhere;">Akce</th>
+</tr></thead>
+<tbody>
+<tr>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(policy[:warning_period_days].to_s) %> <%= day_word.call(policy[:warning_period_days]) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(policy[:count_7d].to_s) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(policy[:warning_limit].to_s) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;">Upozornění</td>
+</tr>
+<tr>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(policy[:stop_period_days].to_s) %> <%= day_word.call(policy[:stop_period_days]) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(policy[:count_30d].to_s) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(policy[:stop_limit].to_s) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;">Vypnutí VPS</td>
+</tr>
+</tbody>
+</table>
+<% if policy[:mode] == 'observe' || policy[:suppress_actions] == true -%>
+<p>Při tomto vyhodnocení byla u pravidla zakázaná automatická upozornění i vypínání VPS.</p>
+<% elsif policy[:stop_enforced] == false -%>
+<p>Při tomto vyhodnocení nebylo u pravidla povoleno automatické vypínání VPS.</p>
+<% end -%>
+<% end -%>
+<% if policies.any? { |policy| policy[:stop_enforced] == true } -%>
+<p>Pokud se tato situace bude opakovat, VPS může být vypnuto.</p>
+<% end -%>
+<% end -%>
+<hr style="border:0;border-top:1px solid #dce2e7;margin:24px 0;">
+<% if @incident.codename -%>
+<p><a href="https://kb.vpsfree.cz/navody/vps/incidenty#<%= ERB::Util.html_escape((@incident.codename).to_s) %>">Více informací v KB</a></p>
+<% end -%>
+<% if @incident.vps_action == 'stop' -%>
+<p>VPS bylo vypnuto. Prosíme o kontrolu a řešení.</p>
+<% elsif @incident.vps_action == 'suspend' -%>
+<p>VPS bylo vypnuto a pozastaveno. Pro opětovné spuštění prosím kontaktuj podporu.</p>
+<% elsif @incident.vps_action == 'disable_network' -%>
+<p>VPS bylo odpojeno od sítě. Pro opětovné připojení prosím kontaktuj podporu. Do VPS se můžeš přihlásit pomocí vzdálené konzole ve vpsAdminu.</p>
+<% elsif @incident.cpu_limit -%>
+<p>Podívej se na to prosím a informuj nás ohledně řešení, abychom mohli zrušit nastavený CPU limit.</p>
+<% else -%>
+<p>Prosíme o kontrolu a případné řešení.</p>
+<% end -%>
+<p>S pozdravem<br>tým vpsFree.cz</p>
+<p style="font-size:12px;color:#596773;">(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)</p>
+</td></tr>
+</table>
+</body>
+</html>

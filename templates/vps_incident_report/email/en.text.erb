@@ -1,3 +1,4 @@
+<% day_word = ->(days) { days == 1 ? 'day' : 'days' } -%>
 Hi <%= @vps.user.login %>,
 
 <% if @incident.mailbox_id -%>
@@ -21,6 +22,37 @@ Message:
 
 <%= @incident.text %>
 
+<% policies = Array(@incident_policies).select do |policy|
+     policy.is_a?(Hash) && !policy[:label].to_s.empty? &&
+       %i[warning_period_days stop_period_days count_7d count_30d].all? { |key| policy[key].is_a?(Integer) && policy[key] >= 0 } &&
+       %i[warning_limit stop_limit].all? { |key| policy[key].is_a?(Integer) && policy[key].positive? }
+   end -%>
+<% if policies.any? -%>
+Incident summary:
+<% policies.each_with_index do |policy, index| -%>
+<% if index.positive? -%>
+
+<% end -%>
+<%= policy[:label] %>
+Period | Incidents | Limit | Action
+<%= policy[:warning_period_days] %> <%= day_word.call(policy[:warning_period_days]) %> | <%= policy[:count_7d] %> | <%= policy[:warning_limit] %> | Warning
+<%= policy[:stop_period_days] %> <%= day_word.call(policy[:stop_period_days]) %> | <%= policy[:count_30d] %> | <%= policy[:stop_limit] %> | VPS stop
+<% if policy[:mode] == 'observe' || policy[:suppress_actions] == true -%>
+
+Automatic warnings and VPS stopping were disabled for this policy at the time of evaluation.
+<% elsif policy[:stop_enforced] == false -%>
+
+Automatic VPS stopping was disabled for this policy at the time of evaluation.
+<% end -%>
+<% end -%>
+<% if policies.any? { |policy| policy[:stop_enforced] == true } -%>
+
+If this happens again, the VPS may be stopped.
+<% end -%>
+<% end -%>
+<% if policies.any? -%>
+
+<% end -%>
 --
 
 <% if @incident.codename -%>

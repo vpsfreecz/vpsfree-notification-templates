@@ -1,3 +1,4 @@
+<% day_word = ->(days) { days == 1 ? 'den' : ((2..4).cover?(days) ? 'dny' : 'dní') } -%>
 Ahoj <%= @vps.user.login %>,
 
 <% if @incident.mailbox_id -%>
@@ -21,6 +22,37 @@ Zpráva:
 
 <%= @incident.text %>
 
+<% policies = Array(@incident_policies).select do |policy|
+     policy.is_a?(Hash) && !policy[:label].to_s.empty? &&
+       %i[warning_period_days stop_period_days count_7d count_30d].all? { |key| policy[key].is_a?(Integer) && policy[key] >= 0 } &&
+       %i[warning_limit stop_limit].all? { |key| policy[key].is_a?(Integer) && policy[key].positive? }
+   end -%>
+<% if policies.any? -%>
+Přehled incidentů:
+<% policies.each_with_index do |policy, index| -%>
+<% if index.positive? -%>
+
+<% end -%>
+<%= policy[:label] %>
+Období | Počet incidentů | Limit | Akce
+<%= policy[:warning_period_days] %> <%= day_word.call(policy[:warning_period_days]) %> | <%= policy[:count_7d] %> | <%= policy[:warning_limit] %> | Upozornění
+<%= policy[:stop_period_days] %> <%= day_word.call(policy[:stop_period_days]) %> | <%= policy[:count_30d] %> | <%= policy[:stop_limit] %> | Vypnutí VPS
+<% if policy[:mode] == 'observe' || policy[:suppress_actions] == true -%>
+
+Při tomto vyhodnocení byla u pravidla zakázaná automatická upozornění i vypínání VPS.
+<% elsif policy[:stop_enforced] == false -%>
+
+Při tomto vyhodnocení nebylo u pravidla povoleno automatické vypínání VPS.
+<% end -%>
+<% end -%>
+<% if policies.any? { |policy| policy[:stop_enforced] == true } -%>
+
+Pokud se tato situace bude opakovat, VPS může být vypnuto.
+<% end -%>
+<% end -%>
+<% if policies.any? -%>
+
+<% end -%>
 --
 
 <% if @incident.codename -%>

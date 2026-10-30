@@ -1,0 +1,62 @@
+<% day_word = ->(days) { days == 1 ? 'den' : ((2..4).cover?(days) ? 'dny' : 'dní') } -%>
+Ahoj <%= @user.login %>,
+
+VPS <%= @vps.id %> <%= @vps.hostname %> bylo vypnuto kvůli opakovaným incidentům.
+
+<%= @incident_type_label %>
+<% if [@warning_period_days, @stop_period_days, @incident_count_7d, @incident_count_30d].all? { |value| value.is_a?(Integer) && value >= 0 } &&
+      [@warning_limit, @stop_limit].all? { |value| value.is_a?(Integer) && value.positive? } -%>
+Období | Počet incidentů | Limit | Akce
+<%= @warning_period_days %> <%= day_word.call(@warning_period_days) %> | <%= @incident_count_7d %> | <%= @warning_limit %> | Upozornění
+<%= @stop_period_days %> <%= day_word.call(@stop_period_days) %> | <%= @incident_count_30d %> | <%= @stop_limit %> | Vypnutí VPS
+<% end -%>
+<% if @stopped_at -%>
+Čas vypnutí: <%= local_time(@stopped_at, '%Y-%m-%d %H:%M:%S %Z') %>
+<% end -%>
+
+Taková zátěž narušuje provoz ostatních VPS na stejném nodu.
+Zkontroluj prosím využití paměti a nastavení služeb ve VPS. U webového serveru
+nebo aplikace může pomoci snížení počtu pracovních procesů.
+
+Parametry VPS včetně paměti můžeš násobit současně
+s navýšením členského příspěvku.
+
+  https://kb.vpsfree.cz/informace/platby#z_ceho_se_sklada_clensky_poplatek
+
+VPS můžeš znovu spustit ve vpsAdminu.<% if @stop_enforced %> Pokud se incidenty opakují, může být znovu vypnuto.<% end %>
+
+Prosíme o řešení.
+
+<% incidents = if @contributor_snapshot_available
+                 Array(@contributing_incidents).select { |incident| incident[:available] }
+               elsif @trigger_incident && @trigger_incident[:available]
+                 [@trigger_incident]
+               else
+                 []
+               end -%>
+<% if incidents.any? -%>
+Incidenty<% if @contributor_snapshot_available %> (<%= incidents.length %>/<%= @contributing_incident_count %>)<% end %>:
+
+<% incidents.each do |incident| -%>
+  #<%= incident[:id] %><% if incident[:detected_at] %> | <%= local_time(incident[:detected_at], '%Y-%m-%d %H:%M:%S %Z') %><% end %> | <%= incident[:subject].to_s.gsub(/[[:cntrl:]\u2028\u2029]/, ' ') %>
+<% if incident[:url] -%>
+    <%= incident[:url] %>
+<% end -%>
+<% end -%>
+
+<% end -%>
+<% if @incident_history_url -%>
+Přehled incidentů ve vpsAdminu:
+
+  <%= @incident_history_url %>
+
+<% end -%>
+Více informací:
+
+  https://kb.vpsfree.cz/navody/vps/incidenty#oomd
+
+S pozdravem
+
+tým vpsFree.cz
+
+(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)
