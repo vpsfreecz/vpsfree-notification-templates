@@ -1,0 +1,26 @@
+Ahoj <%= @user.login %>,
+
+Ve VPS <%= @vps.id %> <%= @vps.hostname %> byly zaznamenány opakované incidenty.
+
+  Typ incidentu: <%= @incident_type_label %>
+  Incidenty za posledních <%= @warning_period_days %> dní: <%= @incident_count_7d %> (limit upozornění: <%= @warning_limit %>)
+  Incidenty za posledních <%= @stop_period_days %> dní: <%= @incident_count_30d %> (limit vypnutí: <%= @stop_limit %>)
+  Čas incidentu: <%= local_time(@incident_at, '%Y-%m-%d %H:%M:%S %Z') %>
+
+Prohlédni si prosím přehled incidentů a vyřeš jejich příčinu, aby nedocházelo k dalším.
+<% if @stop_enforced -%>
+Pokud nový incident tohoto typu zvýší jejich počet za posledních <%= @stop_period_days %> dní na <%= @stop_limit %> nebo více,
+VPS se automaticky vypne. Pokud VPS znovu spustíš a incidenty tohoto typu budou
+pokračovat, dokud jejich počet zůstává na tomto limitu nebo nad ním, VPS se znovu
+vypne, nejvýše jednou za <%= @repeat_stop_hours %> hodin.
+<% end -%>
+
+Přehled incidentů ve vpsAdminu:
+
+  <%= @base_url %>?page=incidents&action=list&list=1&vps=<%= @vps.id %>&codename=<%= @incident_type %>
+
+S pozdravem
+
+tým vpsFree.cz
+
+(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)

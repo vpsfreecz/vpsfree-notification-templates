@@ -1,0 +1,38 @@
+Ahoj <%= @user.login %>,
+
+VPS <%= @vps.id %> <%= @vps.hostname %> opakovaně vyvolává zásahy systému ochrany před nadměrnou zátěží.
+
+  Incidenty za posledních <%= @warning_period_days %> dní: <%= @incident_count_7d %> (limit upozornění: <%= @warning_limit %>)
+  Incidenty za posledních <%= @stop_period_days %> dní: <%= @incident_count_30d %> (limit vypnutí: <%= @stop_limit %>)
+  Čas incidentu: <%= local_time(@incident_at, '%Y-%m-%d %H:%M:%S %Z') %>
+
+Taková zátěž ovlivňuje ostatní VPS na stejném nodu a může narušit provoz jejich
+služeb. Zkontroluj prosím využití paměti a nastavení služeb ve VPS. Častou příčinou
+je webový server nebo aplikace, která spouští více pracovních procesů, než kolik
+dostupná paměť zvládne. Problém může vyřešit snížení maximálního počtu těchto procesů.
+
+Pokud aplikace potřebují více paměti, můžeš paměť VPS navýšit rozšířením členství:
+
+  https://kb.vpsfree.cz/informace/platby#z_ceho_se_sklada_clensky_poplatek
+
+Vyřeš prosím příčinu, aby nedocházelo k dalším incidentům.
+<% if @stop_enforced -%>
+Pokud nový incident zvýší jejich počet za posledních <%= @stop_period_days %> dní na <%= @stop_limit %> nebo více,
+VPS se automaticky vypne. Pokud VPS znovu spustíš a incidenty budou pokračovat,
+dokud jejich počet zůstává na tomto limitu nebo nad ním, VPS se znovu vypne,
+nejvýše jednou za <%= @repeat_stop_hours %> hodin.
+<% end -%>
+
+Přehled incidentů ve vpsAdminu:
+
+  <%= @base_url %>?page=incidents&action=list&list=1&vps=<%= @vps.id %>&codename=oomd
+
+Více informací o těchto incidentech:
+
+  https://kb.vpsfree.cz/navody/vps/incidenty#oomd
+
+S pozdravem
+
+tým vpsFree.cz
+
+(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)

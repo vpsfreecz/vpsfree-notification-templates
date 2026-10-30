@@ -1,0 +1,28 @@
+Ahoj <%= @user.login %>,
+
+VPS <%= @vps.id %> <%= @vps.hostname %> se vypnulo kvůli opakovaným incidentům.
+
+  Typ incidentu: <%= @incident_type_label %>
+  Incidenty za posledních <%= @warning_period_days %> dní: <%= @incident_count_7d %> (limit upozornění: <%= @warning_limit %>)
+  Incidenty za posledních <%= @stop_period_days %> dní: <%= @incident_count_30d %> (limit vypnutí: <%= @stop_limit %>)
+  Čas incidentu: <%= local_time(@incident_at, '%Y-%m-%d %H:%M:%S %Z') %>
+  Čas vypnutí: <%= local_time(@stopped_at, '%Y-%m-%d %H:%M:%S %Z') %>
+
+Prohlédni si prosím přehled incidentů a vyřeš jejich příčinu. Při tomto vypnutí se
+také zakázalo automatické spouštění VPS. VPS můžeš znovu spustit ve vpsAdminu,
+zjistit příčinu a vyřešit problém.
+<% if @stop_enforced -%>
+Pokud dojde k dalšímu incidentu tohoto typu a jejich počet za posledních <%= @stop_period_days %> dní
+zůstane na <%= @stop_limit %> nebo výše, VPS se znovu vypne, nejvýše jednou za <%= @repeat_stop_hours %> hodin.
+Jakmile počet incidentů klesne pod tento limit, opět platí běžné limity.
+<% end -%>
+
+Přehled incidentů ve vpsAdminu:
+
+  <%= @base_url %>?page=incidents&action=list&list=1&vps=<%= @vps.id %>&codename=<%= @incident_type %>
+
+S pozdravem
+
+tým vpsFree.cz
+
+(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)

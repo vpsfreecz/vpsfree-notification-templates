@@ -78,3 +78,31 @@ module:
 vpsAdmin overlays these templates on its built-in templates and reconciles the
 effective set before starting the API. The template source is a build input;
 there is no separate upload or installation command.
+
+## Repeated-incident notifications
+
+`vps_memory_pressure_warning` and `vps_memory_pressure_stopped` provide specific
+advice for VPS memory-pressure incidents. `vps_incident_warning` and
+`vps_incident_stopped` provide generic incident escalation messages. Each pair
+has Czech and English subjects and plain-text bodies. A stopped template covers
+both first and repeat stops and reports only confirmed success. These supplement
+the existing individual incident notifications.
+
+The vpsAdmin rule registry explicitly selects a specific pair when installed,
+otherwise the generic pair. A disabled recipient preference or rendering or
+sending failure does not select an alternate template. Existing template
+language fallback still applies. The backend supplies `incident_type` as a
+registered safe key and `incident_type_label` in the actual rendered language.
+The generic pair makes no memory, worker-count or membership assumptions.
+
+Incident counts and event timestamps describe the original decision. The
+backend refreshes `warning_limit`, `stop_limit` and `stop_enforced` from effective
+settings when rendering or retrying mail. Future automatic-stop consequences
+appear only when `stop_enforced` is true. Stopped messages describe autostart
+being disabled by that stop; a subsequent manual start may have changed it.
+Manual-start guidance remains when enforcement has since been disabled.
+
+These templates require matching vpsAdmin registrations and variables. Deploy
+matching backend and templates before enabling notifications; older versions do
+not send these template names. Existing individual incident and OOM-report
+notifications remain separate.
