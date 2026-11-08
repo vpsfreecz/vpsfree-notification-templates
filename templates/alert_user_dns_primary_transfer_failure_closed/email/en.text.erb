@@ -1,0 +1,30 @@
+<%
+def url(page, params = nil)
+  @base_url + "?page=" + page + (params ? "&#{params}" : "")
+end
+
+zone = @object
+-%>
+Hi <%= @user.login %>,
+
+<% if @event.action_state['dns_primary_transfer_closure_reason'] == 'recovered' -%>
+checks from every configured secondary to every configured primary for DNS
+zone <%= zone.name %> have succeeded. These results confirm transfer readiness
+at the time of each check. Each secondary's serving status and serial are
+shown separately.
+<% else -%>
+the primary or secondary configuration for DNS zone <%= zone.name %> has
+changed. The previous transfer-readiness alert has therefore been closed.
+This does not confirm that removed primary servers recovered. Newly
+configured paths remain pending until their checks complete.
+<% end -%>
+
+You can view the zone and its checks in vpsAdmin:
+
+  <%= url('dns', "action=zone_show&id=#{zone.id}") %>
+
+Best regards,
+
+vpsFree.cz team
+
+(This is an automated mail from vpsAdmin, your reply will be sent to our support)

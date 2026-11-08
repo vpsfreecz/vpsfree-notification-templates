@@ -1,0 +1,29 @@
+<%
+def url(page, params = nil)
+  @base_url + "?page=" + page + (params ? "&#{params}" : "")
+end
+
+zone = @object
+-%>
+Hi <%= @user.login %>,
+
+DNS zone <%= zone.name %> is enabled as a secondary zone but has no
+configured primary server. Our secondary servers may still serve a previously
+loaded copy, but this does not provide a source for future updates.
+
+Please add a primary server in the zone details and allow AXFR/IXFR from the
+assigned secondary server addresses. An IP address you still own remains configured
+when detached from a VPS; moving it between your VPSes does not require
+adding it to each zone again.
+
+  <%= url('dns', "action=zone_show&id=#{zone.id}") %>
+
+You can acknowledge this alert to stop further reminders about this incident:
+
+  <%= url('monitoring', "action=ack&id=#{@event.id}") %>
+
+Best regards,
+
+vpsFree.cz team
+
+(This is an automated mail from vpsAdmin, your reply will be sent to our support)

@@ -1,0 +1,29 @@
+<%
+def url(page, params = nil)
+  @base_url + "?page=" + page + (params ? "&#{params}" : "")
+end
+
+zone = @object
+-%>
+Ahoj <%= @user.login %>,
+
+zóna <%= zone.name %> je zapnutá jako sekundární zóna, ale nemá nastavený
+žádný primární server. Naše sekundární servery mohou dál poskytovat dříve
+načtenou kopii, ta ale není zdrojem budoucích změn.
+
+Přidej prosím primární server v detailu zóny a povol přenos AXFR/IXFR z adres
+přidělených sekundárních serverů. IP adresa, kterou stále vlastníš, zůstává
+v konfiguraci i po odpojení od VPS. Při přesunu mezi tvými VPS ji nemusíš
+znovu přidávat do každé zóny.
+
+  <%= url('dns', "action=zone_show&id=#{zone.id}") %>
+
+Potvrzením tohoto upozornění zastavíš další připomínky stejného problému:
+
+  <%= url('monitoring', "action=ack&id=#{@event.id}") %>
+
+S pozdravem
+
+tým vpsFree.cz
+
+(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)

@@ -57,6 +57,17 @@ nix run .#check
 The parser and checker come from the pinned vpsAdmin input, so this repository
 does not need a separate Ruby toolchain or checker implementation.
 
+Check the DNS monitoring notification branches with synthetic addresses and
+identities from the same development shell:
+
+```shell
+nix develop -c ruby test/dns_monitoring_templates.rb
+```
+
+Pass an output directory to retain the 12 rendered Czech/English examples for
+review. The check distinguishes successful readiness from configuration removal
+and configuration restoration; it does not send email.
+
 ## Use with vpsAdmin
 
 Add this repository as a flake input and pass its package to the vpsAdmin NixOS

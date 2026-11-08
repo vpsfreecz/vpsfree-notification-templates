@@ -1,0 +1,28 @@
+<%
+def url(page, params = nil)
+  @base_url + "?page=" + page + (params ? "&#{params}" : "")
+end
+
+zone = @object
+-%>
+Hi <%= @user.login %>,
+
+<% if @event.action_state['dns_secondary_missing_primary_closure_reason'] == 'configuration_restored' -%>
+a primary server is configured again for DNS zone <%= zone.name %>.
+Transfer readiness remains pending until checks of the configured paths
+succeed. Restoring the configuration does not by itself confirm a successful transfer.
+<% else -%>
+DNS zone <%= zone.name %> is no longer enabled as an external secondary
+zone, so its missing-primary incident has been closed. This does not confirm
+a successful transfer or restored primary reachability.
+<% end -%>
+
+You can view the zone in vpsAdmin:
+
+  <%= url('dns', "action=zone_show&id=#{zone.id}") %>
+
+Best regards,
+
+vpsFree.cz team
+
+(This is an automated mail from vpsAdmin, your reply will be sent to our support)

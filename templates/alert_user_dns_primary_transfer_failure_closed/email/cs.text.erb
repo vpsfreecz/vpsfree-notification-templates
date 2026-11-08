@@ -1,0 +1,30 @@
+<%
+def url(page, params = nil)
+  @base_url + "?page=" + page + (params ? "&#{params}" : "")
+end
+
+zone = @object
+-%>
+Ahoj <%= @user.login %>,
+
+<% if @event.action_state['dns_primary_transfer_closure_reason'] == 'recovered' -%>
+kontroly z každého nastaveného sekundárního serveru na každý nastavený
+primární server zóny <%= zone.name %> uspěly. Výsledky potvrzují připravenost
+k přenosu v době jednotlivých kontrol. Stav poskytování zóny a sériové číslo
+každého sekundárního serveru se zobrazují samostatně.
+<% else -%>
+konfigurace primárních nebo sekundárních serverů zóny <%= zone.name %> se
+změnila, a proto bylo předchozí upozornění na připravenost k přenosu uzavřeno. To
+nepotvrzuje, že odstraněné primární servery znovu fungují. Nově nastavené
+cesty čekají na dokončení kontrol.
+<% end -%>
+
+Zónu a její kontroly najdeš ve vpsAdminu:
+
+  <%= url('dns', "action=zone_show&id=#{zone.id}") %>
+
+S pozdravem
+
+tým vpsFree.cz
+
+(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)

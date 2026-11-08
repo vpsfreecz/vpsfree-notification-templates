@@ -1,0 +1,57 @@
+<%
+def url(page, params = nil)
+  @base_url + "?page=" + page + (params ? "&#{params}" : "")
+end
+
+def time(t)
+  return '---' unless t
+
+  local_time(t, '%Y-%m-%d %H:%M:%S')
+end
+
+def value(v)
+  v.nil? || v.to_s.empty? ? '---' : v
+end
+
+zone = @object
+states_by_primary = zone.alert_eligible_primary_transfer_states.group_by(&:dns_zone_transfer)
+-%>
+Ahoj <%= @user.login %>,
+
+kontroly přenosů nebo diagnostika BINDu ukazují problém s přímými přenosy
+z tvých nastavených primárních serverů na jeden nebo více našich sekundárních
+DNS serverů pro zónu <%= zone.name %>.
+
+Dotčené přenosy z primárních na sekundární servery:
+<% states_by_primary.each do |transfer, states| -%>
+
+Primární server: <%= transfer.ip_addr %>
+<% states.each do |state| -%>
+- Sekundární server: <%= state.dns_server_zone.dns_server.name %> (<%= state.secondary_source_addr %>)
+  Chyba zjištěna: <%= time(state.failed_since) %>
+  Kód chyby: <%= value(state.reason_code) %>
+  Důvod: <%= value(state.reason) %>
+<% end -%>
+  Záznamy přenosů:
+  <%= url('dns', "action=transfer_log&dns_zone=#{zone.id}&dns_zone_transfer=#{transfer.id}") %>
+<% end -%>
+
+To nutně neznamená, že je zóna nedostupná. Sekundární server může dál
+poskytovat dříve načtenou kopii získanou od jiného sekundárního serveru.
+Problémy s přímými přenosy ale mohou bránit spolehlivému šíření budoucích
+změn na všechny sekundární servery.
+
+Zkontroluj prosím, jestli jsou primární servery dostupné, poskytují platnou
+zónu, používají nakonfigurované ověření TSIG a povolují přenosy AXFR/IXFR
+z adres dotčených sekundárních serverů.
+
+Pokud tento problém potvrdíš, nebudeš dostávat další upozornění, dokud
+nebude po vyřešení znovu detekován:
+
+  <%= url('monitoring', "action=ack&id=#{@event.id}") %>
+
+S pozdravem
+
+tým vpsFree.cz
+
+(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)

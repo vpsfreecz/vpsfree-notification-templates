@@ -1,0 +1,57 @@
+<%
+def url(page, params = nil)
+  @base_url + "?page=" + page + (params ? "&#{params}" : "")
+end
+
+def time(t)
+  return '---' unless t
+
+  local_time(t, '%Y-%m-%d %H:%M:%S')
+end
+
+def value(v)
+  v.nil? || v.to_s.empty? ? '---' : v
+end
+
+zone = @object
+states_by_primary = zone.alert_eligible_primary_transfer_states.group_by(&:dns_zone_transfer)
+-%>
+Hi <%= @user.login %>,
+
+transfer checks or BIND diagnostics show a problem with direct transfers
+from your configured primary servers to one or more of our secondary DNS
+servers for zone <%= zone.name %>.
+
+Affected primary-to-secondary transfers:
+<% states_by_primary.each do |transfer, states| -%>
+
+Primary server: <%= transfer.ip_addr %>
+<% states.each do |state| -%>
+- Secondary server: <%= state.dns_server_zone.dns_server.name %> (<%= state.secondary_source_addr %>)
+  Failure detected: <%= time(state.failed_since) %>
+  Error code: <%= value(state.reason_code) %>
+  Reason: <%= value(state.reason) %>
+<% end -%>
+  Transfer logs:
+  <%= url('dns', "action=transfer_log&dns_zone=#{zone.id}&dns_zone_transfer=#{transfer.id}") %>
+<% end -%>
+
+This does not necessarily mean that the zone is unavailable. A secondary
+server may still serve a previously loaded copy received from a peer.
+Problems with direct transfers can prevent future updates from reaching
+all secondary servers reliably.
+
+Please check that the primary servers are reachable, serve a valid zone, use
+the configured TSIG authentication, and allow AXFR/IXFR transfers from the
+affected secondary server addresses.
+
+If you acknowledge this issue, you will not receive more alerts until it is
+detected again after being resolved:
+
+  <%= url('monitoring', "action=ack&id=#{@event.id}") %>
+
+Best regards,
+
+vpsFree.cz team
+
+(This is an automated mail from vpsAdmin, your reply will be sent to our support)
