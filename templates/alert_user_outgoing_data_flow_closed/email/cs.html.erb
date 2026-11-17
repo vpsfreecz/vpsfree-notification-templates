@@ -35,52 +35,58 @@ def truncate(arr, cnt = 10)
   ret
 end
 %>
-<html>
+<!DOCTYPE html>
+<html lang="cs">
   <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-      h1, h2, h3, h4, h5, h6 {
+      .mail-content h1, .mail-content h2, .mail-content h3, .mail-content h4, .mail-content h5, .mail-content h6 {
         margin: 15px 0 10px 0;
       }
 
-      h3 {
+      .mail-content h3 {
         font-size: 18px;
       }
 
-      p, table, ul, ol, dl, fieldset {
+      .mail-content p, .mail-content table, .mail-content ul, .mail-content ol, .mail-content dl, .mail-content fieldset {
         margin: 15px 0;
       }
 
-      table {
+      .mail-content table {
+        overflow-wrap: normal;
         border-collapse: collapse;
         border-spacing: 0;
         font-size: 100%;
       }
 
-      th {
+      .mail-content th {
         text-align: center;
         font-weight: bold;
       }
 
-      th, td {
+      .mail-content th, .mail-content td {
         padding: 3px 7px;
       }
 
-      table th {
+      .mail-content table th {
         background: #5EAFFF;
         color: #FFF;
       }
 
-      table th, table td {
+      .mail-content table th, .mail-content table td {
         border: 1px solid #B2DAFF;
       }
 
-      table.log tr td:nth-child(2) {
+      .mail-content table.log tr td:nth-child(2) {
         text-align: right;
       }
     </style>
   </head>
-  <body>
+  <body style="margin:0;padding:24px 12px;background:#f3f5f7;color:#24313d;font-family:Arial,sans-serif;line-height:1.6;">
+<table role="presentation" style="table-layout:fixed;width:100%;max-width:640px;margin:0 auto;background:#fff;border:1px solid #dce2e7;border-radius:8px;">
+<tr><td style="padding:24px;">
+<div class="mail-content" style="overflow-x:auto;overflow-wrap:anywhere;">
     <p>Ahoj <%= @user.login %>,</p>
     <p>
       problém s nadměrným tokem odchozích dat byl vyřešen.
@@ -113,8 +119,11 @@ end
 
       tým vpsFree.cz
     </p>
-    <p>
+    <p style="font-size:12px;color:#596773;">
       (Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)
     </p>
-  </body>
+</div>
+</td></tr>
+</table>
+</body>
 </html>
