@@ -17,6 +17,12 @@ Ruby library or checker.
 - `nix develop`: enter a shell that provides `notification-template-check`.
 - `nix build .#`: build the package with templates under `templates/`.
 
+For template changes, read the rendered plain-text and HTML emails, including
+both conditional outcomes and missing optional data. ERB source layout is not a
+preview: check the resulting spaces, line breaks and paragraphs. Use the existing
+renderer tests to check plural forms, escaping and matching content across
+languages and formats.
+
 ## Coding Style and Naming
 
 Follow `.editorconfig`: UTF-8, LF line endings, trimmed whitespace, and 2-space
@@ -49,6 +55,30 @@ variants; do not paraphrase either language in an individual template:
 
 - English: `(This is an automated mail from vpsAdmin, your reply will be sent to our support)`
 - Czech: `(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)`
+
+Keep messages brief and useful. Include details that help the member understand
+what happened, how it affects them or what they can do. Omit internal processing
+details, redundant metadata and empty sections that add nothing to that purpose.
+Describe applicable consequences without listing every disabled or inactive
+outcome. Explain failures or missing information when they affect the member's
+understanding or next step.
+
+Use direct, natural wording and familiar vocabulary. Choose grammatical forms,
+including plurals, from the actual values inserted into each sentence. Keep the
+same facts and actions across languages and plain-text/HTML variants. Use nearby
+templates as style references: dataset expansion and shrink notices for concise
+copy and data rows, and `ip_release_requested` for HTML layout.
+
+Write for the rendered message. Group related sentences into readable paragraphs;
+conditional markup must not introduce stray spaces, line breaks or empty
+paragraphs. Keep localized explanations in templates and pass facts from the
+backend. Escape dynamic HTML values. Keep the README as a basic entry point and
+put detailed guidance in its appropriate documentation.
+
+Read adjacent sentences and paragraph openings together. Remove accidental
+repetition of ordinary words and repeated openings (for example, consecutive If
+or Pokud) by restructuring the passage. Keep established technical terms stable
+when repetition prevents ambiguity; do not cycle synonyms solely for variety.
 
 Admin templates can be terse, using tables, lists, and direct action links.
 
