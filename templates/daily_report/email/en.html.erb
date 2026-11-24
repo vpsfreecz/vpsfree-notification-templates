@@ -150,6 +150,46 @@ def fmt_or_nil(v)
   v ? yield(v) : '-'
 end
 
+
+# Incident policy summary: presentation of producer-prepared facts only.
+def incident_policy_value(value)
+  ERB::Util.html_escape(value.nil? ? '—' : value.to_s)
+end
+
+def incident_policy_link(value, href)
+  text = incident_policy_value(value)
+  href ? "<a href=\"#{incident_policy_value(href)}\">#{text}</a>" : text
+end
+
+def incident_policy_time(value)
+  incident_policy_value(value && local_time(value, '%Y-%m-%d %H:%M:%S %Z'))
+end
+
+def incident_policy_identity(name, id)
+  parts = [name, id.nil? ? nil : "##{id}"].compact
+  parts.empty? ? 'Unavailable' : parts.join(' ')
+end
+
+def incident_policy_boolean(value)
+  incident_policy_value({ true => 'yes', false => 'no' }.fetch(value, 'unknown'))
+end
+
+def incident_policy_label(value)
+  labels = {
+    'clear' => 'Clear', 'near_limit' => 'Near limit', 'warning' => 'Warning',
+    'stop_threshold' => 'Shutdown threshold', 'observe' => 'Observe', 'notify' => 'Notify',
+    'enforce' => 'Enforce', 'none' => 'No action', 'stop' => 'Shutdown',
+    'pending' => 'Pending', 'queued' => 'Queued', 'completed' => 'Completed',
+    'failed' => 'Failed', 'uncertain' => 'Uncertain', 'suppressed' => 'Suppressed',
+    'recorded' => 'Recorded', 'skipped' => 'Skipped', 'error' => 'Error', 'audit_only' => 'Audit only'
+  }
+  incident_policy_value(labels.fetch(value, value))
+end
+
+def incident_policy_mail(state)
+  state == 'sent' ? incident_policy_value('Accepted by mail server') : incident_policy_label(state)
+end
+
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -791,6 +831,135 @@ END
       </tr>
     <% end %>
   </table>
+<% end %>
+
+<% if @incident_policy_summary %>
+<% summary = @incident_policy_summary; overview = summary[:overview] %>
+<section id="incident-policy-summary" aria-labelledby="incident-policy-heading">
+<h2 id="incident-policy-heading">Incident policies</h2>
+<p>Current matches at <%= incident_policy_time(summary[:as_of]) %>.</p>
+<p>Recorded activity period: <%= incident_policy_time(summary[:period_start]) %> to <%= incident_policy_time(summary[:period_end]) %> (up to, but not including, the end time).</p>
+
+<% if overview[:rows].empty? %>
+<p>No current incident policy matches.</p>
+<% else %>
+<h3>VPS with current matches</h3>
+<% if overview[:omitted_count] > 0 %>
+<p>Showing <%= incident_policy_value(overview[:rows].length) %> of <%= incident_policy_value(overview[:total_count]) %>; <%= incident_policy_value(overview[:omitted_count]) %> omitted.</p>
+<% end %>
+<div style="overflow-x:auto;">
+<table style="display:table;min-width:960px;width:100%;max-width:none;font-size:14px;line-height:1.4;">
+  <tr><th>VPS / OWNER</th><th>POLICY</th><th>WARNING THRESHOLD</th><th>SHUTDOWN THRESHOLD</th><th>CURRENT RESTRICTIONS</th><th>RECORDED OUTCOMES</th></tr>
+  <% overview[:rows].each do |row| %>
+  <tr>
+    <td style="vertical-align:top;">
+      <%= incident_policy_link(incident_policy_identity(row[:hostname], row[:vps_id]), row[:vps_url]) %><br>
+      Owner: <%= incident_policy_value(incident_policy_identity(row[:user_login], row[:user_id])) %><br>
+      Node: <%= incident_policy_value(row[:node_name]) %>
+    </td>
+    <td style="vertical-align:top;"><%= incident_policy_link(row[:label], row[:policy_url]) %><br><%= incident_policy_value(row[:policy_key]) %></td>
+    <td style="vertical-align:top;"><%= incident_policy_value(row[:count_7d]) %> / <%= incident_policy_value(row[:warning_limit]) %> in <%= incident_policy_value(row[:warning_period_days]) %> days<br>
+      Reports remaining: <%= incident_policy_value(row[:warning_remaining]) %></td>
+    <td style="vertical-align:top;"><%= incident_policy_value(row[:count_30d]) %> / <%= incident_policy_value(row[:stop_limit]) %> in <%= incident_policy_value(row[:stop_period_days]) %> days<br>
+      Reports remaining: <%= incident_policy_value(row[:stop_remaining]) %></td>
+    <td style="vertical-align:top;">
+      <% if row[:configuration_valid] == false %>Invalid configuration.<br><% end %>
+      Mode: <%= incident_policy_label(row[:effective_mode]) %> (global <%= incident_policy_label(row[:global_mode]) %>)
+      <% if row[:status] %>; status: <%= incident_policy_label(row[:status]) %><% end %><br>
+      Warning emails allowed: <%= incident_policy_boolean(row[:warning_permitted]) %>; automatic shutdown allowed: <%= incident_policy_boolean(row[:stop_enforced]) %><br>
+      <% if row[:owner_active] == false %>Owner inactive.<br><% end %>
+      <% if row[:transfer_pending] %>Ownership transfer pending.<br><% end %>
+      <% if row[:outstanding_stop_state] && row[:outstanding_stop_state] != 'none' %>
+        Outstanding shutdown: <%= incident_policy_label(row[:outstanding_stop_state]) %>
+        <% if row[:outstanding_stop_action_id] %> (#<%= incident_policy_value(row[:outstanding_stop_action_id]) %>)<% end %>
+        <% if row[:outstanding_stop_chain_id] %>; chain #<%= incident_policy_value(row[:outstanding_stop_chain_id]) %><% end %><br>
+      <% end %>
+      <% if row[:next_warning_allowed_at] %>Warning cooldown ends: <%= incident_policy_time(row[:next_warning_allowed_at]) %><br><% end %>
+      <% if row[:next_stop_allowed_at] %>Shutdown cooldown ends: <%= incident_policy_time(row[:next_stop_allowed_at]) %><% end %>
+    </td>
+    <td style="vertical-align:top;">
+      <% if row[:last_incident_at] %>Last match: <%= incident_policy_time(row[:last_incident_at]) %><br><% end %>
+      <% if row[:latest_action_id] %>
+        Action #<%= incident_policy_value(row[:latest_action_id]) %>: <%= incident_policy_label(row[:latest_action_kind]) %> / <%= incident_policy_label(row[:latest_action_state]) %><br>
+        Mail: <%= incident_policy_mail(row[:latest_mail_state]) %><br>
+        <% if row[:latest_stop_completed_at] %>Confirmed shutdown: <%= incident_policy_time(row[:latest_stop_completed_at]) %><br><% end %>
+      <% else %>
+        No recorded action.<br>
+      <% end %>
+      <%= incident_policy_link('Reports', row[:report_url]) %>
+      <% if row[:latest_action_chain_id] %><br>Latest action chain #<%= incident_policy_value(row[:latest_action_chain_id]) %><% end %>
+      <% if row[:transaction_url] %><br><%= incident_policy_link('Transaction details', row[:transaction_url]) %><% end %>
+    </td>
+  </tr>
+  <% end %>
+</table>
+</div>
+<% end %>
+<% if overview[:url] %><p><%= incident_policy_link('Open current overview', overview[:url]) %></p><% end %>
+<p>Reports remaining is the number needed to reach a threshold. Counts can fall as older reports leave the window. Reaching a threshold or the end of a cooldown does not guarantee an action: settings, ownership and outstanding work can prevent it.</p>
+
+<% [[:activity, 'Recorded policy activity', 'No recorded policy activity during this period.'], [:outstanding, 'Outstanding policy actions now', 'No outstanding policy actions.']].each do |name, heading, empty_text| %>
+<% collection = summary[name] %>
+<% if collection[:rows].empty? %>
+<p><%= incident_policy_value(empty_text) %></p>
+<% else %>
+<h3><%= incident_policy_value(heading) %></h3>
+<% if name == :outstanding %><p>Unresolved actions and mail, including work from before this report period.</p><% end %>
+<% if collection[:omitted_count] > 0 %>
+<p>Showing <%= incident_policy_value(collection[:rows].length) %> of <%= incident_policy_value(collection[:total_count]) %>; <%= incident_policy_value(collection[:omitted_count]) %> omitted.</p>
+<% end %>
+<div style="overflow-x:auto;">
+<table style="display:table;min-width:960px;width:100%;max-width:none;font-size:14px;line-height:1.4;">
+  <tr><th>RECORDED TIME</th><th>VPS / OWNER</th><th>POLICY / REPORT</th><th>SAVED COUNTS</th><th>DECISION / ACTION</th><th>MAIL / SHUTDOWN OUTCOME</th></tr>
+  <% collection[:rows].each do |row| %>
+  <tr>
+    <td style="vertical-align:top;">
+      <% if name == :activity %>
+        <%= incident_policy_time(row[:activity_at]) %><br>
+        <%= incident_policy_value({ 'evaluation' => 'Evaluation recorded', 'stop_completed' => 'Shutdown confirmed', 'mail_queued' => 'Mail queued', 'mail_finished' => 'Mail attempt finished', 'action_updated' => 'Failed or uncertain outcome last updated' }.fetch(row[:activity_basis], row[:activity_basis])) %><br>
+      <% end %>
+      Evaluation: <%= incident_policy_time(row[:evaluated_at]) %><br>
+      <% if row[:detected_at] %>Detected: <%= incident_policy_time(row[:detected_at]) %><% end %>
+    </td>
+    <td style="vertical-align:top;"><%= incident_policy_link(incident_policy_identity(row[:hostname], row[:vps_id]), row[:vps_url]) %><br>
+      Owner: <%= incident_policy_value(incident_policy_identity(row[:user_login], row[:user_id])) %></td>
+    <td style="vertical-align:top;"><%= incident_policy_link(row[:label], row[:policy_url]) %><br><%= incident_policy_value(row[:policy_key]) %><br>
+      <%= incident_policy_link("Report ##{row[:incident_report_id]}", row[:report_url]) %></td>
+    <td style="vertical-align:top;">
+      Warning: <%= incident_policy_value(row[:count_7d]) %> / <%= incident_policy_value(row[:warning_limit]) %> in <%= incident_policy_value(row[:warning_period_days]) %> days<br>
+      Shutdown: <%= incident_policy_value(row[:count_30d]) %> / <%= incident_policy_value(row[:stop_limit]) %> in <%= incident_policy_value(row[:stop_period_days]) %> days<br>
+      Mode: <%= incident_policy_label(row[:effective_mode]) %>; automatic shutdown allowed: <%= incident_policy_boolean(row[:stop_enforced]) %><br>
+      Saved status: <%= incident_policy_label(row[:threshold_status]) %>
+    </td>
+    <td style="vertical-align:top;">
+      Evaluation #<%= incident_policy_value(row[:id]) %>: <%= incident_policy_label(row[:state]) %><br>
+      Matched: <%= incident_policy_boolean(row[:matched]) %>; decision: <%= incident_policy_label(row[:decision]) %><br>
+      <% if row[:action_id] %>
+        Action #<%= incident_policy_value(row[:action_id]) %>: <%= incident_policy_label(row[:action_kind]) %> / <%= incident_policy_label(row[:action_state]) %><br>
+        <% if row[:action_created_at] %>Created: <%= incident_policy_time(row[:action_created_at]) %><br><% end %>
+        <% if row[:action_updated_at] %>Last updated: <%= incident_policy_time(row[:action_updated_at]) %><% end %>
+        <% if row[:physical_stop_action_id] %><br>Shared shutdown action #<%= incident_policy_value(row[:physical_stop_action_id]) %><% end %>
+        <% if row[:transaction_chain_id] %><br><%= incident_policy_link("Transaction chain ##{row[:transaction_chain_id]}", row[:transaction_url]) %><% end %>
+      <% else %>
+        No recorded action.
+      <% end %>
+    </td>
+    <td style="vertical-align:top;">
+      Mail: <%= incident_policy_mail(row[:mail_state]) %><br>
+      <% if row[:mail_queued_at] %>Queued: <%= incident_policy_time(row[:mail_queued_at]) %><br><% end %>
+      <% if row[:mail_finished_at] %>Mail attempt finished: <%= incident_policy_time(row[:mail_finished_at]) %><br><% end %>
+      <% if row[:stop_completed_at] %>Confirmed shutdown: <%= incident_policy_time(row[:stop_completed_at]) %><% end %>
+      <% if row[:notice_report_id] %><br>Notice report #<%= incident_policy_value(row[:notice_report_id]) %><% end %>
+    </td>
+  </tr>
+  <% end %>
+</table>
+</div>
+<% end %>
+<% if collection[:url] %><p><%= incident_policy_link('Open current history view', collection[:url]) %></p><% end %>
+<% end %>
+<p>History shows saved evaluations and the latest recorded outcomes, not every state change or retry. Policies with the same shutdown action ID share one VPS shutdown. Mail server acceptance does not confirm inbox delivery; queued, suppressed, failed and uncertain mail has no confirmed acceptance. Links open current admin views, which may have changed since this report.</p>
+</section>
 <% end %>
 
 <h2>OOM reports</h2>

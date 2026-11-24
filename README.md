@@ -57,6 +57,8 @@ nix run .#check
 The parser and checker come from the pinned vpsAdmin input, so this repository
 does not need a separate Ruby toolchain or checker implementation.
 
+[Daily-report HTML regression checks](tests/README.md)
+
 ## Use with vpsAdmin
 
 Add this repository as a flake input and pass its package to the vpsAdmin NixOS
