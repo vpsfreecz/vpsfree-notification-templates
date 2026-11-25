@@ -55,7 +55,12 @@ Pokud se tato situace bude opakovat, VPS může být vypnuto.
 <% end -%>
 --
 
-<% if @incident.codename -%>
+<% if @rtnl_exposure.is_a?(Hash) && @rtnl_exposure[:detail_url] -%>
+Zobrazit všechny započtené intervaly RTNL:
+
+  <%= @rtnl_exposure[:detail_url] %>
+
+<% elsif @incident.codename && @incident.codename != 'rtnl_latency' -%>
 Více informací o tomto typu incidentu může být v KB:
 
   https://kb.vpsfree.cz/navody/vps/incidenty#<%= @incident.codename %>

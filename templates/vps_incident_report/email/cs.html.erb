@@ -63,7 +63,9 @@
 <% end -%>
 <% end -%>
 <hr style="border:0;border-top:1px solid #dce2e7;margin:24px 0;">
-<% if @incident.codename -%>
+<% if @rtnl_exposure.is_a?(Hash) && @rtnl_exposure[:detail_url] -%>
+<p><a href="<%= ERB::Util.html_escape(@rtnl_exposure[:detail_url].to_s) %>">Zobrazit všechny započtené intervaly RTNL</a></p>
+<% elsif @incident.codename && @incident.codename != 'rtnl_latency' -%>
 <p><a href="https://kb.vpsfree.cz/navody/vps/incidenty#<%= ERB::Util.html_escape((@incident.codename).to_s) %>">Více informací v KB</a></p>
 <% end -%>
 <% if @incident.vps_action == 'stop' -%>

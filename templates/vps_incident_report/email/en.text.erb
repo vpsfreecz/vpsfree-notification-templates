@@ -55,7 +55,12 @@ If this happens again, the VPS may be stopped.
 <% end -%>
 --
 
-<% if @incident.codename -%>
+<% if @rtnl_exposure.is_a?(Hash) && @rtnl_exposure[:detail_url] -%>
+View all contributing RTNL intervals:
+
+  <%= @rtnl_exposure[:detail_url] %>
+
+<% elsif @incident.codename && @incident.codename != 'rtnl_latency' -%>
 More information about this kind of incident can be found in KB:
 
   https://kb.vpsfree.org/manuals/vps/incidents#<%= @incident.codename %>
